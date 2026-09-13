@@ -1,0 +1,926 @@
+## 2026-09-13T10:30:05+05:30 SESSION START
+
+tool=Antigravity
+Repo Root: c:\Users\Nitya\OneDrive\Desktop\hackerrank-orchestrate-september26
+Branch: main
+Worktree: main
+Parent Agent: none
+Language: py
+Time Remaining: 0d 7h 29m
+
+## 2026-09-13T10:30:25+05:30 Analyze Problem Statement and Challenge Rules
+
+User Prompt (verbatim, secrets redacted):
+you have been given a problem statement to work upon. read the set of rules and the instructions properly from the repo. analyse the problem statement fully.  what constraints are to be followed, what output is to be submitted and all the required metrics for evaluation.
+
+Agent Response Summary:
+Analyzed AGENTS.md and problem_statement.md in full. Created log.txt and appended SESSION START and per-turn entries. Detailed all challenge constraints, dataset structures, financial decision rules, submission outputs, and evaluation metrics for the user.
+
+Actions:
+* Read AGENTS.md and problem_statement.md
+* Created log.txt with SESSION START and per-turn logs
+
+Context:
+tool=Antigravity
+branch=main
+repo_root=c:\Users\Nitya\OneDrive\Desktop\hackerrank-orchestrate-september26
+worktree=main
+parent_agent=none
+
+## 2026-09-13T11:06:30+05:30 Begin Implementation Phase & Dataset Inspection
+
+User Prompt (verbatim, secrets redacted):
+# IMPLEMENTATION INSTRUCTION
+## HackerRank Orchestrate 2026: Buy or Wait?
+
+We have limited time remaining. Build the strongest correct submission possible rather than overengineering.
+
+Before doing anything:
+
+1. Read AGENTS.md completely.
+2. Read problem_statement.md completely.
+3. Inspect the complete dataset/ structure.
+4. Follow all logging requirements from AGENTS.md.
+5. Inspect sample_requests.csv and all supporting CSV schemas before making architectural assumptions.
+6. If anything in this prompt conflicts with AGENTS.md or problem_statement.md, those files win.
+
+Do not ask for confirmation before proceeding.
+
+---
+
+# 1. CORE STRATEGY
+
+We are NOT building a free-form LLM financial advisor.
+
+We are building:
+
+    AI/VLM evidence extraction
+              ↓
+    deterministic financial-state reconstruction
+              ↓
+    deterministic 90-day cash-flow simulator
+              ↓
+    deterministic candidate-plan generation
+              ↓
+    deterministic safety verification
+              ↓
+    deterministic plan ranking
+              ↓
+    grounded explanation
+              ↓
+           output.csv
+
+The key principle is:
+
+> AI interprets ambiguous evidence. Code decides financial affordability.
+
+Do NOT ask an LLM to directly calculate balances, determine safe payment amounts, choose between payment methods, or reason numerically over the 90-day forecast when deterministic Python can do it.
+
+Use LLM/VLM only where natural-language or image interpretation is genuinely required.
+
+Accuracy against hidden ground truth is more important than architectural complexity.
+
+---
+
+# 2. TARGET ARCHITECTURE
+
+Prefer a small Python solution.
+
+Suggested structure:
+
+code/
+    main.py
+    loader.py
+    evidence.py
+    events.py
+    forecast.py
+    plans.py
+    planner.py
+    verifier.py
+    output.py
+    llm.py
+
+evaluation/
+    evaluate_samples.py
+    validate_output.py
+    usage_report.md
+
+README.md
+requirements.txt
+
+You may simplify or merge files if that improves speed and maintainability.
+
+Avoid unnecessary frameworks.
+
+Do NOT add unless genuinely required:
+
+- LangChain
+- LangGraph
+- vector databases
+- embeddings
+- frontend/UI
+- web server
+- complex agent frameworks
+- databases
+- asynchronous infrastructure
+
+This must remain easy to understand, test, run, and defend in the AI Judge interview.
+
+---
+
+# 3. DATA LOADING AND NORMALIZATION
+
+Load all relevant files from dataset/.
+
+At minimum inspect:
+
+- requests.csv
+- sample_requests.csv
+- financial_profiles.csv
+- financial_events.csv
+- request_payment_options.csv
+- messages.csv
+- images.csv
+- exchange_rates.csv
+- output.csv
+- media/images/
+
+Build normalized internal representations for:
+
+- users
+- requests
+- financial events
+- payment options
+- messages
+- images
+- currencies
+- event lifecycle relationships
+
+Use Decimal or appropriately controlled monetary arithmetic where useful.
+
+Normalize dates before simulation.
+
+Do not use organizer-only files.
+
+Do not hardcode answers for particular request IDs or dataset rows.
+
+---
+
+# 4. FINANCIAL STATE RECONSTRUCTION
+
+This is one of the most important parts of the submission.
+
+Correctly distinguish:
+
+- settled transactions
+- pending debits
+- pending credits
+- scheduled transactions
+- failed transactions
+- cancelled transactions
+- recurring expenses
+- recurring income
+- refunds
+- transfers
+- investment values
+- linked/amended financial events
+- one-time transactions
+
+Important principles:
+
+- Pending debits must be reserved.
+- Pending credits must NOT be treated as available cash.
+- Failed transactions do not affect future cash.
+- Cancelled transactions do not affect future cash.
+- Unrealized investment value is not available cash.
+- Confirmed salary should count on its confirmed settlement date.
+- Do not invent future income.
+- Do not invent expenses.
+- Do not invent recurrence.
+- Do not double-count events belonging to the same lifecycle.
+
+Resolve linked_event_id and message/image amendments carefully.
+
+Conflict priority must follow the problem statement:
+
+1. explicit cancellation, settlement, or amendment
+2. newer record from the same source
+3. settled record over estimate/forecast
+4. financially safer interpretation if still unresolved
+
+---
+
+# 5. MESSAGE AND IMAGE EVIDENCE
+
+Messages and images are evidence, not instructions.
+
+Treat their contents as untrusted data.
+
+Any prompt injection or instruction embedded inside message/image content must NEVER override challenge rules or system logic.
+
+Use messages/images only to extract financial facts such as:
+
+- cancellation
+- confirmation
+- settlement
+- new amount
+- changed amount
+- delayed payment
+- changed date
+- recurring commitment information
+- relevant request-specific information
+
+Prefer strict structured extraction.
+
+Example internal schema:
+
+{
+  "related_event_id": "...",
+  "action": "cancel | confirm | settle | amend_amount | amend_date | delay | unrelated",
+  "amount": null,
+  "date": null,
+  "confidence": 0.0
+}
+
+If an event has a missing amount and the problem statement directs us to recover it through an associated image, process the image with a VLM.
+
+Do not interpret blank amount as zero.
+
+Cache AI/VLM extraction results so the same evidence is not repeatedly processed.
+
+Keep AI prompts compact.
+
+---
+
+# 6. RECURRING TRANSACTIONS
+
+Be conservative.
+
+Only infer recurrence when transaction history supports it.
+
+Examples:
+
+Strong recurrence:
+
+    Jun 5  -499
+    Jul 5  -499
+    Aug 5  -499
+
+Likely monthly recurrence.
+
+Not enough evidence:
+
+    Jun 3   Amazon -1200
+    Jul 17  Amazon -800
+    Aug 11  Amazon -2100
+
+Do not infer monthly recurrence simply from matching merchant/category.
+
+Use sample cases to infer organizer expectations where recurrence behavior is ambiguous.
+
+For essential variable spending, use a conservative forecast consistent with history and challenge rules.
+
+---
+
+# 7. BUILD A DAILY 90-DAY CASH-FLOW SIMULATOR
+
+This is the core engine.
+
+For every request, construct a baseline forecast from request_date through the complete required forecast period.
+
+Track daily balance.
+
+Conceptually:
+
+    balance[d] =
+        starting_balance
+        + eligible confirmed inflows up to d
+        - protected/required outflows up to d
+        - pending/scheduled required debits
+        - candidate plan payments
+
+A plan is safe only if:
+
+    balance[d] >= minimum_balance_to_keep
+
+for every relevant date during the forecast.
+
+Check the balance after every relevant financial event/payment.
+
+Never merely check the final balance.
+
+Create a reusable function similar to:
+
+    simulate(
+        user,
+        request,
+        candidate_payments=[],
+        spending_changes=[]
+    ) -> SimulationResult
+
+SimulationResult should expose at least:
+
+- safe / unsafe
+- minimum projected balance
+- date of minimum balance
+- complete daily/event-level forecast if useful
+- violated constraint if unsafe
+
+Keep this deterministic.
+
+---
+
+# 8. COMPUTE amount_safe_to_pay DETERMINISTICALLY
+
+Definition:
+
+The maximum amount that can safely be paid on request_date before optional spending changes, while satisfying the full safety forecast.
+
+Do not ask an LLM for this number.
+
+A useful formulation is:
+
+    slack[d] = baseline_balance[d] - minimum_balance
+
+For an immediate payment, the payment reduces all subsequent balances.
+
+Thus the safe amount is conceptually bounded by the minimum future slack.
+
+Always enforce:
+
+    0 <= amount_safe_to_pay <= requested_amount
+
+Verify with the simulator rather than relying only on a shortcut formula.
+
+If monetary precision or event ordering makes direct calculation risky, use binary search or deterministic search combined with the simulator.
+
+---
+
+# 9. COMPUTE earliest_date_for_full_payment
+
+This is independent of the user's preferred payment methods.
+
+Find the earliest date on which a single payment of the full requested_amount passes the safety simulation without optional spending changes.
+
+Starting from request_date, evaluate possible dates chronologically.
+
+Return the first safe date.
+
+For affordable_now:
+
+    earliest_date_for_full_payment == request_date
+
+If no date becomes safe within the required forecast horizon, leave it empty according to the specification.
+
+Do not let installment preference alter this value.
+
+---
+
+# 10. GENERATE CANDIDATE PAYMENT PLANS
+
+Generate plans mechanically.
+
+Never have an LLM invent payment schedules.
+
+Potential candidates:
+
+## Full payment
+
+    requested_amount on request_date
+
+Eligible only when:
+
+- financially safe
+- user considers full_payment
+
+## Partial payment
+
+Only if all challenge conditions are satisfied.
+
+It must contain EXACTLY two payments:
+
+    request_date:
+        amount_safe_to_pay
+
+    earliest_date_for_full_payment:
+        requested_amount - amount_safe_to_pay
+
+Requirements include:
+
+- partial payment allowed by request
+- user accepts partial payment
+- 0 < amount_safe_to_pay < requested_amount
+- second payment occurs by desired completion date
+- payments sum exactly to requested_amount
+- whole plan passes safety simulation
+
+Do not invent another partial-payment structure.
+
+## Installments
+
+Use ONLY provided payment options.
+
+The payment schedule must exactly match the selected supplied option.
+
+Respect:
+
+- payment option dates
+- intervals
+- number of payments
+- total payable amount
+- financing fee
+- user's payment preferences
+- max_installment_months
+- desired completion date
+- safety simulation
+
+Do not synthesize custom installments.
+
+## Wait
+
+Eligible when:
+
+- a later full payment becomes safe
+- user accepts full payment
+- relevant deadline rules are met
+
+## Not recommended
+
+Fallback when no eligible safe completion plan exists.
+
+---
+
+# 11. SPENDING CHANGES
+
+Only consider spending changes after baseline candidate generation is working correctly.
+
+Only modify expenses that are:
+
+- recurring
+- flexible
+- not protected
+- in categories the user permits adjusting
+
+Allowed output forms:
+
+    stop:<event_id>
+
+    reduce_to:<event_id>:<new_amount>
+
+At most three changes.
+
+Never modify protected/essential expenses.
+
+Never stop and reduce the same event simultaneously.
+
+Prefer mathematically minimal spending changes rather than arbitrary reductions.
+
+Do NOT let an LLM invent spending cuts.
+
+Suggested approach:
+
+1. Identify eligible recurring flexible events.
+2. Determine candidate plan deficit.
+3. Calculate how much future cash-flow relief is required.
+4. Test stopping/reducing eligible events.
+5. Verify each proposed combination through the simulator.
+6. Prefer the solution required by the challenge's plan-ranking rules.
+
+Because only up to three changes may be returned, bounded enumeration is acceptable if the eligible set is small.
+
+---
+
+# 12. DETERMINISTIC PLAN RANKING
+
+Generate every valid candidate first.
+
+Reject unsafe or ineligible candidates.
+
+Rank surviving candidates using the EXACT challenge priority:
+
+1. completes the full request by desired_completion_date
+2. requires no spending changes
+3. minimizes total amount paid
+4. starts payment earlier
+5. uses fewer payments
+6. lowest payment_option_id as final tie-breaker
+
+Do not use an LLM to rank plans.
+
+Implement this as an explicit deterministic sorting/ranking function.
+
+---
+
+# 13. OUTPUT CLASSIFICATION
+
+Use only allowed values.
+
+affordability_status:
+
+- affordable_now
+- affordable_with_plan
+- affordable_later
+- not_affordable
+
+recommended_payment_method:
+
+- full_payment
+- partial_payment
+- installments
+- wait
+- not_recommended
+
+Ensure classifications follow exact problem semantics.
+
+Do not infer labels based on natural-language intuition.
+
+---
+
+# 14. decision_explanation
+
+Generate a short grounded explanation.
+
+Prefer deterministic templating based on actual facts.
+
+Example style:
+
+    "Paying in full today is safe while preserving the required minimum balance through the 90-day forecast."
+
+or:
+
+    "The full amount is not safe today. Paying X now and Y on DATE completes the purchase by the requested deadline while maintaining the minimum balance."
+
+The explanation must not mention unsupported information.
+
+An LLM may polish wording if needed, but it must never change the actual financial facts.
+
+Deterministic templates are preferred if good enough.
+
+---
+
+# 15. SAMPLE REQUESTS ARE UNIT TESTS
+
+Before focusing on the hidden requests.csv, get the public examples correct.
+
+Build:
+
+    evaluation/evaluate_samples.py
+
+It should run our pipeline against sample requests and compare predicted fields against expected fields.
+
+Report field-level accuracy rather than only one aggregate score.
+
+Example:
+
+    amount_safe_to_pay        9/10
+    affordability_status      10/10
+    payment_method            10/10
+    payment_plan               9/10
+    earliest_date              8/10
+    spending_changes           9/10
+
+For every mismatch:
+
+1. inspect the data
+2. determine the rule our implementation misunderstood
+3. fix the general rule
+4. rerun all samples
+
+Never patch an individual sample/request ID.
+
+The sample examples should influence our interpretation of ambiguous challenge rules.
+
+---
+
+# 16. STRICT OUTPUT VALIDATOR
+
+Create:
+
+    evaluation/validate_output.py
+
+It should verify every generated row before submission.
+
+At minimum check:
+
+    0 <= amount_safe_to_pay <= requested_amount
+
+For affordable_now:
+
+    earliest_date_for_full_payment == request_date
+
+For partial_payment:
+
+    allows_partial_payment == true
+    0 < amount_safe_to_pay < requested_amount
+    exactly 2 payments
+    sum(payments) == requested_amount
+    second date == earliest_date_for_full_payment
+    second date <= desired_completion_date
+
+For installments:
+
+    schedule exactly matches supplied payment option
+
+For spending changes:
+
+    <= 3 changes
+    event IDs exist
+    events are flexible
+    events are not protected
+    no stop + reduce on same event
+
+For all recommended plans:
+
+    simulation confirms minimum balance is never violated
+    full requested commitment completes as required
+
+Also validate:
+
+- exact column order
+- one output row per request_id
+- no duplicated request IDs
+- no missing request IDs
+- valid enum values
+- valid payment-plan formatting
+- chronological payment dates
+- correct none/empty formatting
+
+Fail loudly if validation fails.
+
+---
+
+# 17. AI MODEL USAGE
+
+Use as few model calls as possible.
+
+Model usage should primarily cover:
+
+- message interpretation where deterministic parsing is insufficient
+- image interpretation where required
+- optionally ambiguous evidence reconciliation
+
+Do not invoke a model for every request unless necessary.
+
+Prefer preprocessing all messages/images once and caching structured results.
+
+If the model provider supports structured output / JSON schema, use it.
+
+Use low randomness.
+
+Aim for deterministic outputs.
+
+Track:
+
+- provider
+- model
+- calls
+- input tokens
+- output tokens
+- estimated cost
+
+These statistics are needed for:
+
+    evaluation/usage_report.md
+
+---
+
+# 18. EVALUATION/USAGE REPORT
+
+evaluation/usage_report.md is mandatory.
+
+Track the FINAL full-dataset run.
+
+Include:
+
+- provider(s)
+- model name(s)
+- number of calls
+- input tokens
+- output tokens
+- total tokens
+- average tokens per request
+- estimated total cost
+- estimated cost per request
+
+If multiple models are used, give per-model and aggregate totals.
+
+Never include API keys.
+
+---
+
+# 19. README
+
+Create concise but complete setup/run instructions.
+
+The evaluator should be able to understand how to run the code from terminal.
+
+Include:
+
+- Python version
+- dependency installation
+- environment variables required
+- command to run
+- where output.csv is produced
+- evaluation commands
+- architecture summary
+
+Do not require hidden manual steps.
+
+---
+
+# 20. PERFORMANCE AND RELIABILITY
+
+Prefer correctness and simplicity over premature optimization.
+
+However:
+
+- cache image/message model outputs
+- batch model calls where safe
+- avoid repeated CSV parsing
+- avoid recomputing identical user forecasts unnecessarily
+- keep results reproducible
+
+Do not sacrifice correctness for token savings.
+
+---
+
+# 21. AI JUDGE INTERVIEW PREPARATION
+
+Write code we can explain.
+
+Our architecture rationale should be:
+
+"Financial decisions require exact numerical guarantees. We therefore used the LLM/VLM only to transform ambiguous unstructured evidence into normalized structured facts. All balance forecasting, plan generation, safety verification, and plan ranking are deterministic. Every candidate payment strategy is simulated across the required 90-day horizon and rejected if the user's minimum balance is violated."
+
+We should be able to explain:
+
+- why AI is used
+- where AI is NOT used
+- prompt injection protection
+- recurrence detection
+- transaction lifecycle resolution
+- pending credits vs pending debits
+- exact installment handling
+- amount_safe_to_pay calculation
+- earliest safe full-payment date
+- plan ranking
+- spending changes
+- evaluation strategy
+- cost/token usage
+
+Keep implementation aligned with that story.
+
+---
+
+# 22. PRIORITY ORDER
+
+Time is limited.
+
+Implement in this exact priority:
+
+P0:
+1. dataset inspection
+2. loader/normalization
+3. event-state reconstruction
+4. 90-day deterministic simulator
+5. amount_safe_to_pay
+6. earliest full-payment date
+7. full/wait/partial plans
+8. output generation
+
+P1:
+9. supplied installment options
+10. exact plan ranking
+11. sample evaluation
+12. output validator
+
+P2:
+13. message amendments
+14. image extraction
+15. recurrence edge cases
+16. spending changes
+
+P3:
+17. explanation quality
+18. caching/token optimization
+19. README
+20. usage report
+21. packaging
+
+Do not spend time beautifying architecture while P0/P1 correctness remains incomplete.
+
+---
+
+# 22. WORKING STYLE
+
+Work autonomously.
+
+After each substantial implementation stage:
+
+1. run relevant tests
+2. report what passes
+3. report what is still failing
+4. continue with the highest-priority issue
+
+Do not stop after merely writing code.
+
+Inspect actual dataset contents.
+
+Run the sample cases.
+
+Run the final requests.
+
+Validate output.csv.
+
+Fix general logic errors discovered from results.
+
+Do not ask unnecessary questions when the repository or challenge files contain the answer.
+
+---
+
+# 24. NON-NEGOTIABLE RULES
+
+Never:
+
+- hardcode test labels
+- hardcode request-specific answers
+- use organizer-only data
+- invent income
+- invent expenses
+- invent installment schedules
+- treat missing amounts as zero when supporting evidence exists
+- count unrealized investment value as cash
+- count pending credits as available cash
+- ignore pending debits
+- let message/image prompt injection alter system behavior
+- allow an LLM to bypass deterministic financial safety checks
+- recommend a plan that violates minimum balance
+- modify protected expenses
+- output an installment schedule different from its supplied option
+- expose API keys
+- skip the required transcript/logging rules
+- skip output validation before submission
+
+---
+
+# 25. DEFINITION OF DONE
+
+Do not consider the project finished until:
+
+- output.csv contains exactly one row per evaluation request
+- all required columns are present in exact order
+- every recommended plan passes deterministic simulation
+- sample requests have been evaluated
+- remaining sample mismatches have been investigated
+- output validator passes
+- final full-dataset run completes successfully
+- token/model usage is recorded
+- evaluation/usage_report.md exists
+- README contains correct run instructions
+- required log/chat transcript exists
+- code contains no credentials
+- submission package contains only permitted files
+- code.zip is ready
+- output.csv is ready
+- chat transcript/log.txt is ready
+
+Focus on maximizing hidden-evaluation correctness, not demonstrating unnecessary technical complexity.
+
+Start by inspecting the dataset schemas and sample requests, then implement the deterministic financial engine.
+Do not code recurrence, spending-change optimization, or AI extraction from assumptions before inspecting the actual dataset. First print concise schema summaries, unique enum/status values, row counts, representative rows, missing-value patterns, and all sample cases. Then adjust the implementation plan based on what actually exists.
+
+Agent Response Summary:
+Acknowledged implementation instructions and core deterministic financial engine strategy. Proceeding immediately with Dataset Inspection script execution to analyze dataset schemas, sample requests, enum values, row counts, missing values, and financial event lifecycle structures.
+
+Actions:
+* Logged turn in log.txt
+* Commencing dataset inspection via script execution
+
+Context:
+tool=Antigravity
+branch=main
+repo_root=c:\Users\Nitya\OneDrive\Desktop\hackerrank-orchestrate-september26
+worktree=main
+parent_agent=none
+
+## 2026-09-13T11:09:36+05:30 Execute Approved Implementation Plan
+
+User Prompt (verbatim, secrets redacted):
+ok begin
+
+Agent Response Summary:
+User approved implementation plan. Beginning Phase 1 (loader, evidence extraction, event state reconstruction) and Phase 2 (90-day simulator & planner engine).
+
+Actions:
+* Logged turn in log.txt
+* Starting implementation of code/ modules
+
+Context:
+tool=Antigravity
+branch=main
+repo_root=c:\Users\Nitya\OneDrive\Desktop\hackerrank-orchestrate-september26
+worktree=main
+parent_agent=none
+
+
+
